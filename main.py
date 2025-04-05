@@ -1,47 +1,68 @@
 import sys
-from PyQt5.QtWidgets import (QApplication, QMainWindow, QPushButton, QWidget, QVBoxLayout,
-                             QFileDialog)
+from PyQt5.QtWidgets import (QApplication, QMainWindow, QPushButton,
+                             QWidget, QVBoxLayout, QFileDialog)
 from PyQt5.QtCore import Qt
 
-WINDOW_WIDTH=1024
-WINDOW_HEIGHT=768
+WINDOW_WIDTH = 1024
+WINDOW_HEIGHT = 768
+
+
+def collect_data(filepath: str, start_word: str, end_word: str):
+    try:
+        with open(filepath, 'r') as file:
+            lines = file.readlines()
+            capturing = False  # bool for tracing from /section, /subsection -> /end
+            buffer = []
+            mapped_data = {}
+            map_id = 1
+
+            for line in lines:
+                if not capturing and start_word in line:
+                    capturing = True
+                    buffer = []  # reassigning buffer to empty on every iteration
+
+                if capturing:
+                    buffer.append(line.strip())  # removing newline chars
+
+                    if end_word in line:
+                        capturing = False
+                        mapped_data[f"{map_id}"] = buffer
+                        map_id += 1
+
+            return mapped_data if mapped_data else None
+    except FileNotFoundError:
+        print(f"Error: File '{filepath}' not found.")
+        return None
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return None
+
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-
         self.setWindowTitle("Starter Template")
         self.setGeometry(100, 100, WINDOW_WIDTH, WINDOW_HEIGHT)
 
-        # central widget and layout
+        # Central widget and layout
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
         self.layout = QVBoxLayout(self.central_widget)
 
+        # Stack to keep track of UI states
         self.ui_stack = []
+
+        # Initial state
         self.show_import_screen()
 
-    # def initUI(self):
-    #     # main menu state
-    #     self.state1 = QWidget()
-    #     layout1 = QVBoxLayout()
-    #     importButtonX = int(WINDOW_WIDTH / 2) - 180
-    #     importButtonY = int(WINDOW_HEIGHT / 2) - 100
-    #     self.importButton = QPushButton('Import a file')
-    #     self.importButton.setGeometry(importButtonX, importButtonY, 200, 80)
-    #     self.importButton.clicked.connect(self.on_importButton_click)
-    #
-    #     layout1.addWidget(self.importButton)
-    #     self.state1.setLayout(layout1)
-    #
-    #     self.central_widget.addWidget(self.state1)
-    #     self.central_widget.setCurrentWidget(self.state1)
-
     def clear_layout(self):
+        # Remove all widgets from the layout
         while self.layout.count():
             child = self.layout.takeAt(0)
             if child.widget():
                 child.widget().deleteLater()
+
+
 
     def show_import_screen(self):
         self.clear_layout()
@@ -50,7 +71,7 @@ class MainWindow(QMainWindow):
         # Import button
         importButton = QPushButton('Import a file')
         importButton.setFixedSize(200, 80)
-        importButton.clicked.connect(self.on_importButton_click)
+        importButton.clicked.connect(self.on_import_button_click)
 
         # Center the button
         self.layout.addStretch()
@@ -76,15 +97,27 @@ class MainWindow(QMainWindow):
         self.layout.addWidget(processButton)
         self.layout.addStretch()
 
-    # def on_importButton_click(self):
-    #     print("test clicked")
-
-    def on_importButton_click(self):
+    def on_import_button_click(self):
         # Open file dialog
-        filename, _ = QFileDialog.getOpenFileName(self, "Open File", "", "All Files (*)")
+        filename, _ = QFileDialog.getOpenFileName(self, "Open File", "", "Text Files (*.tex)")
+
         if filename:
             print(f"File selected: {filename}")
-            self.show_processing_screen(filename)
+            # WORK STALLED
+            # self.show_processing_screen(filename)
+            start_word = "\\section"
+            end_word = "\\end"
+
+            extracted_data = collect_data(filename, start_word, end_word)
+            if extracted_data:
+                print("content capturing success")
+                for _, lines in extracted_data.items():
+                    for line in lines:
+                        print(line)
+                    print()
+            else:
+                print("no matching content found :(")
+
 
     def go_back(self):
         if len(self.ui_stack) > 1:
@@ -94,6 +127,7 @@ class MainWindow(QMainWindow):
             if previous_state == "import_screen":
                 self.show_import_screen()
             # Add more states here if needed
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
