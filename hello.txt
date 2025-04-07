@@ -1,0 +1,13 @@
+/section hello world
+i want to build a set of basic apps
+which might not be better than already made apps
+but i want to create my own ecosystem
+so for that reason
+i want to create a solo org
+named ... didnt think yet
+it will start with note app, text editor then code editor
+i will make them on pyQT
+code editor will be ambitious
+text editor will contain features hand-crafted
+and then slowly i'll dwindle into terminals maybe
+/end hello world
